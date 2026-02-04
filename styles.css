@@ -94,6 +94,19 @@ input {
   font-size: 0.95rem;
 }
 
+select {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 16, 28, 0.85);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+input[type="range"] {
+  accent-color: #8b92ff;
+}
+
 button {
   border: none;
   border-radius: 14px;
@@ -230,9 +243,24 @@ button {
 .game {
   margin-top: 24px;
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 220px;
+  grid-template-columns: minmax(320px, 1fr) minmax(220px, 260px);
   gap: 24px;
   align-items: start;
+}
+
+.game__sidebar {
+  display: grid;
+  gap: 16px;
+}
+
+.game__card {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 12px;
+  color: #d4dcff;
 }
 
 canvas {
@@ -255,6 +283,98 @@ canvas {
 
 .game__hud h3 {
   margin: 0;
+}
+
+.game__card h4 {
+  margin: 0;
+}
+
+.hud__stat {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.hud__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.hud__bar div {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6a8c, #ffa36f);
+}
+
+.hud__bar--stamina div {
+  background: linear-gradient(90deg, #6effd8, #6edbff);
+}
+
+.hud__bar--energy div {
+  background: linear-gradient(90deg, #c889ff, #6e8dff);
+}
+
+.status-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.status--online {
+  color: #6effc8;
+  font-weight: 600;
+}
+
+.status--offline {
+  color: #ff8fa0;
+  font-weight: 600;
+}
+
+.quest__zone {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #c7d5ff;
+}
+
+.quest__goal {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.quest__progress {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.quest__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.quest__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6e8dff, #a889ff);
+}
+
+.audio__note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #b6c6ff;
+}
+
+.audio__controls {
+  display: grid;
+  gap: 12px;
+}
+
+.audio__volume {
+  display: grid;
+  gap: 8px;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 900px) {
