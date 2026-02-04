@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Realms of Fate</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <div>
+          <p class="app__eyebrow">Realms of Fate</p>
+          <h1>Choose your destiny</h1>
+          <p class="app__subtitle">
+            Sign in, craft your hero, and enter the frontier.
+          </p>
+        </div>
+        <div class="app__status" id="statusCard">
+          <p class="status__label">Status</p>
+          <p class="status__value" id="authStatus">Signed out</p>
+          <button class="ghost" id="signOutBtn" type="button" hidden>
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      <section class="panel" id="authPanel">
+        <div class="panel__intro">
+          <h2>Sign in or create an account</h2>
+          <p>
+            Continue with Google or create a Realms of Fate account to save your
+            character slot.
+          </p>
+        </div>
+        <div class="auth__grid">
+          <button class="primary" id="googleBtn" type="button">
+            <span>Continue with Google</span>
+          </button>
+          <form class="auth__form" id="emailForm">
+            <label>
+              Email
+              <input
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                name="password"
+                type="password"
+                placeholder="Create a password"
+                minlength="6"
+                required
+              />
+            </label>
+            <button class="secondary" type="submit">Create account</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel" id="characterPanel" hidden>
+        <div class="panel__intro">
+          <h2>Character slots</h2>
+          <p>
+            You have 3 slots. Only the first slot is open for creation right
+            now.
+          </p>
+        </div>
+        <div class="slots" id="slots"></div>
+
+        <form class="character" id="characterForm">
+          <div class="character__details">
+            <label>
+              Character name
+              <input
+                name="name"
+                type="text"
+                placeholder="Enter a name"
+                required
+                minlength="3"
+              />
+            </label>
+            <div class="races">
+              <p class="races__label">Choose your origin</p>
+              <div class="races__options">
+                <label class="race">
+                  <input type="radio" name="race" value="Demon" required />
+                  <span>Demon</span>
+                </label>
+                <label class="race">
+                  <input type="radio" name="race" value="Human" required />
+                  <span>Human</span>
+                </label>
+                <label class="race">
+                  <input type="radio" name="race" value="Angel" required />
+                  <span>Angel</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="character__preview" id="characterPreview">
+            <div class="portrait" id="portrait">
+              <span class="portrait__label">Awaiting choice</span>
+            </div>
+            <button class="primary" type="submit">Spawn on terrain</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" id="gamePanel" hidden>
+        <div class="panel__intro">
+          <h2>Frontier terrain</h2>
+          <p>
+            Use arrow keys to move. Your hero spawns on the overworld generated
+            below.
+          </p>
+        </div>
+        <div class="game">
+          <canvas id="gameCanvas" width="900" height="520"></canvas>
+          <div class="game__hud" id="hud"></div>
+        </div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
