@@ -84,6 +84,24 @@
                 minlength="3"
               />
             </label>
+            <label>
+              Class
+              <select name="role" required>
+                <option value="" disabled selected>Choose a calling</option>
+                <option value="Sentinel">Sentinel</option>
+                <option value="Arcanist">Arcanist</option>
+                <option value="Vanguard">Vanguard</option>
+              </select>
+            </label>
+            <label>
+              Starting weapon
+              <select name="weapon" required>
+                <option value="" disabled selected>Choose a weapon</option>
+                <option value="Gleamblade">Gleamblade</option>
+                <option value="Pulsecaster">Pulsecaster</option>
+                <option value="Storm Pike">Storm Pike</option>
+              </select>
+            </label>
             <div class="races">
               <p class="races__label">Choose your origin</p>
               <div class="races__options">
@@ -101,6 +119,16 @@
                 </label>
               </div>
             </div>
+            <label>
+              Combat focus
+              <input
+                name="focus"
+                type="range"
+                min="1"
+                max="5"
+                value="3"
+              />
+            </label>
           </div>
           <div class="character__preview" id="characterPreview">
             <div class="portrait" id="portrait">
@@ -115,13 +143,18 @@
         <div class="panel__intro">
           <h2>Frontier terrain</h2>
           <p>
-            Use arrow keys to move. Your hero spawns on the overworld generated
-            below.
+            Use arrow keys to move. Press Space to strike and Shift to dash.
+            Your hero spawns on the overworld generated below.
           </p>
         </div>
         <div class="game">
           <canvas id="gameCanvas" width="900" height="520"></canvas>
-          <div class="game__hud" id="hud"></div>
+          <div class="game__sidebar">
+            <div class="game__hud" id="hud"></div>
+            <div class="game__card" id="questLog"></div>
+            <div class="game__card" id="serverStatus"></div>
+            <div class="game__card" id="audioControls"></div>
+          </div>
         </div>
       </section>
     </main>
