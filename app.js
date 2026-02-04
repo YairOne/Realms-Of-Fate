@@ -10,7 +10,11 @@ const characterForm = document.getElementById("characterForm");
 const portrait = document.getElementById("portrait");
 const gameCanvas = document.getElementById("gameCanvas");
 const hud = document.getElementById("hud");
+const progressionCard = document.getElementById("progressionCard");
+const biomeCard = document.getElementById("biomeCard");
+const abilityCard = document.getElementById("abilityCard");
 const questLog = document.getElementById("questLog");
+const pvpCard = document.getElementById("pvpCard");
 const serverStatus = document.getElementById("serverStatus");
 const audioControls = document.getElementById("audioControls");
 
@@ -51,9 +55,10 @@ const WEAPONS = {
 };
 
 const ENEMY_TYPES = [
-  { name: "Wraith", hue: 265, health: 28, speed: 0.55 },
-  { name: "Feral", hue: 20, health: 36, speed: 0.45 },
-  { name: "Stalker", hue: 140, health: 24, speed: 0.7 },
+  { name: "Wraith", hue: 265, health: 28, speed: 0.55, xp: 18 },
+  { name: "Feral", hue: 20, health: 36, speed: 0.45, xp: 22 },
+  { name: "Stalker", hue: 140, health: 24, speed: 0.7, xp: 16 },
+  { name: "Dreadhorn", hue: 320, health: 44, speed: 0.4, xp: 28 },
 ];
 
 const SERVER_REGIONS = [
@@ -61,6 +66,52 @@ const SERVER_REGIONS = [
   "Cinder Ridge",
   "Ironspire",
   "Moonwell",
+];
+
+const BIOMES = [
+  {
+    name: "Emberwild Basin",
+    sky: ["#27366c", "#1f2c58"],
+    ground: ["#234734", "#0f1f18"],
+    accent: "#6effd8",
+    flora: "#4fd27a",
+  },
+  {
+    name: "Sunreach Glade",
+    sky: ["#4967ff", "#2c3b86"],
+    ground: ["#3b5b2d", "#1c2e1d"],
+    accent: "#ffd874",
+    flora: "#8df28f",
+  },
+  {
+    name: "Cinder Hollow",
+    sky: ["#3b2737", "#19121d"],
+    ground: ["#49242f", "#2a1118"],
+    accent: "#ff8f6f",
+    flora: "#d86f5c",
+  },
+  {
+    name: "Frostfall Reach",
+    sky: ["#2c4468", "#1c2b3c"],
+    ground: ["#23324d", "#121b2c"],
+    accent: "#7cd3ff",
+    flora: "#80bfff",
+  },
+];
+
+const ABILITIES = [
+  { name: "Rift Dash", level: 1, type: "Mobility" },
+  { name: "Aether Surge", level: 2, type: "Burst" },
+  { name: "Graviton Snare", level: 3, type: "Control" },
+  { name: "Starlance Barrage", level: 4, type: "AoE" },
+  { name: "Aegis Dominion", level: 5, type: "Ultimate" },
+];
+
+const PVP_ENCOUNTERS = [
+  { name: "Kora the Shade", rank: "Bronze", status: "Dueling" },
+  { name: "Vex of Ardent", rank: "Silver", status: "Queueing" },
+  { name: "Orin Vale", rank: "Gold", status: "Raiding" },
+  { name: "Nyx Everlight", rank: "Platinum", status: "Skirmish" },
 ];
 
 const state = {
@@ -72,6 +123,10 @@ const state = {
   health: 100,
   stamina: 100,
   energy: 100,
+  level: 1,
+  xp: 0,
+  nextLevelXp: 120,
+  abilityPoints: 0,
   enemies: [],
   kills: 0,
   attack: { cooldown: 0, active: false, timer: 0 },
@@ -81,11 +136,13 @@ const state = {
     slain: 0,
     zone: "Emberwild Basin",
   },
+  biomeIndex: 0,
   server: {
     region: SERVER_REGIONS[0],
     latency: 42,
     online: true,
     uptimeStart: Date.now(),
+    players: 128,
   },
   audio: {
     enabled: false,
@@ -151,16 +208,23 @@ function resetPortrait() {
   portrait.innerHTML = '<span class="portrait__label">Awaiting choice</span>';
 }
 
-function updatePortrait(race) {
+function updatePortraitFromForm(form) {
+  const race = form.get("race");
   const style = RACE_STYLES[race];
+  const hair = form.get("hair") || "Awaiting";
+  const armor = form.get("armor") || "Design";
+  const heritage = form.get("heritage") || "Origin";
+  const accent = form.get("accent") || "#6e8dff";
   if (!style) {
     resetPortrait();
     return;
   }
   portrait.innerHTML = `
-    <div class="portrait__orb" style="--hue: ${style.hue}"></div>
+    <div class="portrait__orb" style="--hue: ${style.hue}; --accent: ${accent}"></div>
     <span class="portrait__label">${race}</span>
     <small class="portrait__aura">${style.aura}</small>
+    <small class="portrait__detail">${heritage} • ${hair}</small>
+    <small class="portrait__detail">${armor}</small>
   `;
   portrait.style.background = `radial-gradient(circle at top, hsla(${style.hue}, 80%, 65%, 0.4), rgba(255, 255, 255, 0.04))`;
 }
@@ -172,13 +236,18 @@ function initPortraitStyles() {
       width: 90px;
       height: 90px;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #fff, hsla(var(--hue), 90%, 60%, 0.9));
+      background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
       box-shadow: 0 0 25px hsla(var(--hue), 90%, 60%, 0.6);
     }
     .portrait__aura {
       font-size: 0.75rem;
       color: #f2f4ff;
       opacity: 0.75;
+    }
+    .portrait__detail {
+      font-size: 0.7rem;
+      color: #c7d2ff;
+      opacity: 0.85;
     }
   `;
   document.head.appendChild(style);
@@ -191,11 +260,16 @@ function resetGameState() {
   state.health = 100;
   state.stamina = 100;
   state.energy = 100;
+  state.level = 1;
+  state.xp = 0;
+  state.nextLevelXp = 120;
+  state.abilityPoints = 0;
   state.enemies = [];
   state.kills = 0;
   state.attack = { cooldown: 0, active: false, timer: 0 };
   state.dash = { cooldown: 0, timer: 0 };
   state.quest.slain = 0;
+  state.biomeIndex = 0;
 }
 
 function spawnCharacter(formData) {
@@ -204,6 +278,11 @@ function spawnCharacter(formData) {
   const role = formData.get("role");
   const weapon = formData.get("weapon");
   const focus = Number(formData.get("focus"));
+  const heritage = formData.get("heritage");
+  const hair = formData.get("hair");
+  const armor = formData.get("armor");
+  const accent = formData.get("accent");
+  const intensity = Number(formData.get("intensity"));
   const kit = CLASS_KITS[role];
   const weaponData = WEAPONS[weapon];
 
@@ -213,6 +292,11 @@ function spawnCharacter(formData) {
     role,
     weapon,
     focus,
+    heritage,
+    hair,
+    armor,
+    accent,
+    intensity,
     ...RACE_STYLES[race],
     ...kit,
     ...weaponData,
@@ -227,9 +311,14 @@ function spawnCharacter(formData) {
   state.quest.slain = 0;
   state.kills = 0;
   state.enemies = generateEnemies();
+  state.biomeIndex = Math.floor(Math.random() * BIOMES.length);
 
   characterPanel.hidden = true;
   gamePanel.hidden = false;
+  renderProgression();
+  renderBiomeCard();
+  renderAbilityCard();
+  renderPvpCard();
   renderQuestLog();
   renderAudioControls();
   renderServerStatus();
@@ -240,7 +329,7 @@ function spawnCharacter(formData) {
 
 function generateEnemies() {
   const enemies = [];
-  const count = 6;
+  const count = 7;
   for (let i = 0; i < count; i += 1) {
     const type = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
     enemies.push({
@@ -250,6 +339,7 @@ function generateEnemies() {
       maxHealth: type.health,
       health: type.health,
       speed: type.speed,
+      xp: type.xp,
       x: 240 + Math.random() * 520,
       y: 240 + Math.random() * 200,
       cooldown: 0,
@@ -264,12 +354,14 @@ function seedServerStatus() {
   state.server.latency = 36 + Math.floor(Math.random() * 32);
   state.server.online = true;
   state.server.uptimeStart = Date.now() - Math.floor(Math.random() * 1800000);
+  state.server.players = 96 + Math.floor(Math.random() * 86);
 }
 
 function renderServerStatus() {
   const uptimeMinutes = Math.floor((Date.now() - state.server.uptimeStart) / 60000);
   serverStatus.innerHTML = `
     <h4>Server link</h4>
+    <span class="tag tag--accent">Multiplayer active</span>
     <div class="status-line">
       <span>Realm</span>
       <span>${state.server.region}</span>
@@ -285,9 +377,84 @@ function renderServerStatus() {
       <span>${state.server.latency} ms</span>
     </div>
     <div class="status-line">
+      <span>Population</span>
+      <span>${state.server.players} online</span>
+    </div>
+    <div class="status-line">
       <span>Uptime</span>
       <span>${uptimeMinutes}m</span>
     </div>
+  `;
+}
+
+function renderProgression() {
+  if (!state.character) return;
+  const progress = Math.min(100, (state.xp / state.nextLevelXp) * 100);
+  progressionCard.innerHTML = `
+    <h4>Progression</h4>
+    <div class="progress-grid">
+      <div class="progress-line"><span>Level</span><strong>${state.level}</strong></div>
+      <div class="progress-bar"><span style="width:${progress}%"></span></div>
+      <div class="progress-line">
+        <span>Experience</span>
+        <span>${state.xp}/${state.nextLevelXp}</span>
+      </div>
+      <div class="progress-line"><span>Ability points</span><span>${state.abilityPoints}</span></div>
+      <div class="progress-line"><span>Power rating</span><span>${Math.round(
+        state.level * 118 + state.character.focus * 24
+      )}</span></div>
+    </div>
+  `;
+}
+
+function renderBiomeCard() {
+  const biome = BIOMES[state.biomeIndex];
+  biomeCard.innerHTML = `
+    <h4>Biome scan</h4>
+    <div class="progress-line"><span>Current zone</span><strong>${biome.name}</strong></div>
+    <div class="progress-line"><span>Threat level</span><span>${state.level + 1}</span></div>
+    <div class="progress-line"><span>Recommended party</span><span>${state.level < 3 ? "2-3" : "3-5"}</span></div>
+    <div class="progress-line"><span>Resource</span><span>${biome.accent}</span></div>
+  `;
+}
+
+function renderAbilityCard() {
+  if (!state.character) return;
+  const unlocked = ABILITIES.filter((ability) => ability.level <= state.level);
+  const locked = ABILITIES.filter((ability) => ability.level > state.level);
+  abilityCard.innerHTML = `
+    <h4>Abilities</h4>
+    <div class="tag">Unlocked: ${unlocked.length}</div>
+    <ul>
+      ${unlocked
+        .map(
+          (ability) =>
+            `<li><strong>${ability.name}</strong> • ${ability.type}</li>`
+        )
+        .join("")}
+      ${
+        locked.length
+          ? `<li>Next unlock: ${locked[0].name} (Lvl ${locked[0].level})</li>`
+          : "<li>All abilities mastered.</li>"
+      }
+    </ul>
+  `;
+}
+
+function renderPvpCard() {
+  const shuffled = [...PVP_ENCOUNTERS].sort(() => Math.random() - 0.5);
+  pvpCard.innerHTML = `
+    <h4>PvP arena</h4>
+    <p class="quest__zone">Matchmaking pool: ${14 + state.level} squads</p>
+    <ul>
+      ${shuffled
+        .slice(0, 3)
+        .map(
+          (player) =>
+            `<li><strong>${player.name}</strong> • ${player.rank} • ${player.status}</li>`
+        )
+        .join("")}
+    </ul>
   `;
 }
 
@@ -379,24 +546,42 @@ function drawTerrain() {
 
   ctx.clearRect(0, 0, width, height);
 
-  const sky = ctx.createLinearGradient(0, 0, 0, horizon);
-  sky.addColorStop(0, "#0b1124");
-  sky.addColorStop(1, "#263b6b");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, width, horizon);
+  const segmentWidth = width / BIOMES.length;
+  BIOMES.forEach((biome, index) => {
+    const start = index * segmentWidth;
+    const end = start + segmentWidth;
+    const sky = ctx.createLinearGradient(start, 0, start, horizon);
+    sky.addColorStop(0, biome.sky[0]);
+    sky.addColorStop(1, biome.sky[1]);
+    ctx.fillStyle = sky;
+    ctx.fillRect(start, 0, segmentWidth, horizon);
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
-  ctx.beginPath();
-  ctx.arc(120, 90, 34, 0, Math.PI * 2);
-  ctx.fill();
+    const ground = ctx.createLinearGradient(start, horizon, start, height);
+    ground.addColorStop(0, biome.ground[0]);
+    ground.addColorStop(1, biome.ground[1]);
+    ctx.fillStyle = ground;
+    ctx.fillRect(start, horizon, segmentWidth, height - horizon);
 
-  const ground = ctx.createLinearGradient(0, horizon, 0, height);
-  ground.addColorStop(0, "#1f3b2f");
-  ground.addColorStop(1, "#0f1d16");
-  ctx.fillStyle = ground;
-  ctx.fillRect(0, horizon, width, height - horizon);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.beginPath();
+    ctx.arc(start + 80, 90 + index * 8, 28, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.fillStyle = biome.flora;
+    for (let i = 0; i < 4; i += 1) {
+      const treeX = start + 40 + i * 50;
+      const treeY = horizon - 26 - (index % 2) * 6;
+      ctx.fillRect(treeX, treeY, 6, 20);
+      ctx.beginPath();
+      ctx.arc(treeX + 3, treeY - 6, 14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = "rgba(7, 15, 28, 0.55)";
+    ctx.fillRect(start + 40, horizon + 12, 80, 54);
+  });
+
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
   ctx.lineWidth = 2;
   ctx.beginPath();
   for (let x = 0; x <= width; x += 30) {
@@ -409,10 +594,6 @@ function drawTerrain() {
     }
   }
   ctx.stroke();
-
-  ctx.fillStyle = "rgba(5, 12, 24, 0.6)";
-  ctx.fillRect(520, horizon + 10, 120, 80);
-  ctx.fillRect(560, horizon - 14, 60, 30);
 
   drawEnemies();
   drawPlayer();
@@ -487,9 +668,12 @@ function updateHud() {
   if (!state.character) return;
   hud.innerHTML = `
     <h3>${state.character.name}</h3>
+    <div class="tag tag--accent">Level ${state.level}</div>
     <div>Origin: ${state.character.race}</div>
     <div>Class: ${state.character.role}</div>
     <div>Weapon: ${state.character.weapon}</div>
+    <div>Heritage: ${state.character.heritage}</div>
+    <div>Armor: ${state.character.armor}</div>
     <div>Focus: ${state.character.focus}</div>
     <div>Trait: ${state.character.trait}</div>
     <div>Ability: ${state.character.ability}</div>
@@ -516,6 +700,43 @@ function updateHud() {
     state.position.y
   )})</div>
   `;
+}
+
+function gainXp(amount) {
+  state.xp += amount;
+  if (state.xp >= state.nextLevelXp) {
+    state.xp -= state.nextLevelXp;
+    levelUp();
+  }
+  renderProgression();
+  renderAbilityCard();
+}
+
+function levelUp() {
+  state.level += 1;
+  state.abilityPoints += 1;
+  state.nextLevelXp = Math.round(state.nextLevelXp * 1.22);
+  state.character.baseHealth += 4;
+  state.character.baseStamina += 3;
+  state.character.baseEnergy += 2;
+  state.health = state.character.baseHealth;
+  state.stamina = state.character.baseStamina;
+  state.energy = state.character.baseEnergy;
+  playTone({ frequency: 740, duration: 0.18, type: "triangle" });
+}
+
+function updateBiomeFromPosition() {
+  const segmentWidth = gameCanvas.width / BIOMES.length;
+  const index = Math.min(
+    BIOMES.length - 1,
+    Math.max(0, Math.floor(state.position.x / segmentWidth))
+  );
+  if (index !== state.biomeIndex) {
+    state.biomeIndex = index;
+    state.quest.zone = BIOMES[index].name;
+    renderBiomeCard();
+    renderQuestLog();
+  }
 }
 
 function updateMovement(delta) {
@@ -604,6 +825,7 @@ function attemptAttack() {
       enemy.health = Math.max(0, enemy.health - state.character.damage);
       if (enemy.health === 0) {
         state.kills += 1;
+        gainXp(enemy.xp);
         playTone({ frequency: 320, duration: 0.14, type: "square" });
       }
     }
@@ -657,9 +879,11 @@ function updateFrame(timestamp) {
   regenerateVitals(delta);
   updateMovement(delta);
   updateEnemies(delta);
+  updateBiomeFromPosition();
   drawTerrain();
   updateHud();
   renderServerStatus();
+  renderProgression();
 
   if (state.health <= 0) {
     showDefeatOverlay();
@@ -734,9 +958,8 @@ function setupListeners() {
   signOutBtn.addEventListener("click", signOut);
 
   characterForm.addEventListener("change", (event) => {
-    if (event.target.name === "race") {
-      updatePortrait(event.target.value);
-    }
+    const formData = new FormData(characterForm);
+    updatePortraitFromForm(formData);
   });
 
   characterForm.addEventListener("submit", (event) => {

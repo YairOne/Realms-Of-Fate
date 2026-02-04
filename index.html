@@ -102,6 +102,42 @@
                 <option value="Storm Pike">Storm Pike</option>
               </select>
             </label>
+            <div class="appearance">
+              <p class="appearance__label">Appearance forge</p>
+              <div class="appearance__grid">
+                <label>
+                  Heritage
+                  <select name="heritage" required>
+                    <option value="" disabled selected>Choose heritage</option>
+                    <option value="Mistborne">Mistborne</option>
+                    <option value="Sunreach">Sunreach</option>
+                    <option value="Riftkin">Riftkin</option>
+                  </select>
+                </label>
+                <label>
+                  Hair style
+                  <select name="hair" required>
+                    <option value="" disabled selected>Choose hair</option>
+                    <option value="Obsidian Braid">Obsidian Braid</option>
+                    <option value="Storm Quill">Storm Quill</option>
+                    <option value="Lumen Crown">Lumen Crown</option>
+                  </select>
+                </label>
+                <label>
+                  Armor rig
+                  <select name="armor" required>
+                    <option value="" disabled selected>Choose armor</option>
+                    <option value="Nomad Leather">Nomad Leather</option>
+                    <option value="Arcsteel Mantle">Arcsteel Mantle</option>
+                    <option value="Warden Plate">Warden Plate</option>
+                  </select>
+                </label>
+                <label>
+                  Accent hue
+                  <input name="accent" type="color" value="#6e8dff" />
+                </label>
+              </div>
+            </div>
             <div class="races">
               <p class="races__label">Choose your origin</p>
               <div class="races__options">
@@ -123,6 +159,16 @@
               Combat focus
               <input
                 name="focus"
+                type="range"
+                min="1"
+                max="5"
+                value="3"
+              />
+            </label>
+            <label>
+              Avatar intensity
+              <input
+                name="intensity"
                 type="range"
                 min="1"
                 max="5"
@@ -151,7 +197,11 @@
           <canvas id="gameCanvas" width="900" height="520"></canvas>
           <div class="game__sidebar">
             <div class="game__hud" id="hud"></div>
+            <div class="game__card" id="progressionCard"></div>
+            <div class="game__card" id="biomeCard"></div>
+            <div class="game__card" id="abilityCard"></div>
             <div class="game__card" id="questLog"></div>
+            <div class="game__card" id="pvpCard"></div>
             <div class="game__card" id="serverStatus"></div>
             <div class="game__card" id="audioControls"></div>
           </div>
